@@ -2,16 +2,53 @@
 The dataset presented here was gathered in October 2018 and was
 analyzed as part of the publication:
 
-[[https://advances.sciencemag.org/content/6/23/eaaz1136][/A VersaTile-driven platform for rapid hit-to-lead development of
-engineered lysins/]]
+[[https://advances.sciencemag.org/content/6/23/eaaz1136][A VersaTile-driven platform for rapid hit-to-lead development of engineered lysins]]
 
-By Gerstmans et al., 2020 
 DOI: 10.1126/sciadv.aaz1136
+
+The combinatorial DNA library created was prepared usng the 1D
+ligation approach (SQK-LSK108), without barcoding, and sequenced on a
+Nanopore MinION device, equiped with a flowcell FLO-MIN109.
 
 * Nanopore Sequencing and Data processing
 ** Basecalling
+The raw sequencing data was basecalled using the software Albacore
+v2.3.1 (workflow r94_450bps_linear.cfg). 
 
-** Filtering fastq dataset
+#+BEGIN_SRC bash
+read_fast5_basecaller.py --flowcell FLO-MIN106 \
+                         --kit SQK-LSK108 \
+                         --output_format fastq \
+                         --worker_threads 32 \
+                         --recursive \
+                         --files_per_batch_folder 0 \
+                         --save_path basecalled
+#+END_SRC
+
+Note: since 2019, the basecaller guppy is available and recommended.
+
+** Processing of the fastq dataset
+*** Alignment of the reads to the destination vector and subsetting
+After the assembly reaction, many DNA components are part of the mix
+being sequenced with nanopore. Here we filter out the components that
+do not map to the destination vector (pVTSD2). 
+
+The pVTSD2 were linearized using the ecl136II restriction enzyme, so
+the available fasta sequence of pVTSD2 was rotated to match this
+starting/end site, and then indexed using samtools. The fastq dataset
+was then mapped to the vector using bwa mem. 
+
+Finally, the reads that map to pVTSD2 were further subset. Indeed, as
+part of the VersaTile reaction, a part of the vector gets substituted
+with the assembled product. It is thus possible to extract the region
+that doesn't map to the vector
+
+#+BEGIN_SRC bash
+samtools index pVTSD2_Linear_ecl136II.fasta
+bwa mem -t 16 -x ont2d pVTSD2_Linear_ecl136II.fasta 1D.fastq.tar.gz
+#+END_SRC
+
+Note: minimap2 should be considered instead of bwa
 
 * Generation of count tables
 * Statistical analysis
