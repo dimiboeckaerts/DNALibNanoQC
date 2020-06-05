@@ -1,3 +1,9 @@
 * DNALibNanoQC
+Proof of concept using nanopore sequencing to validate the
+construction of combinatorial DNA libraries.
 
+* Publication
+/Work in progress/
 
+* Contact
+Laboratory of Gene Technology, KU Leuven

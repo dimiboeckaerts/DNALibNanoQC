@@ -1,0 +1,17 @@
+* Dataset description
+The dataset presented here was gathered in October 2018 and was
+analyzed as part of the publication:
+
+[[https://advances.sciencemag.org/content/6/23/eaaz1136][/A VersaTile-driven platform for rapid hit-to-lead development of
+engineered lysins/]]
+
+By Gerstmans et al., 2020 
+DOI: 10.1126/sciadv.aaz1136
+
+* Nanopore Sequencing and Data processing
+** Basecalling
+
+** Filtering fastq dataset
+
+* Generation of count tables
+* Statistical analysis
