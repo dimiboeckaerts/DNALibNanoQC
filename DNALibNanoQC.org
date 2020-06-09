@@ -30,25 +30,64 @@ Note: since 2019, the basecaller guppy is available and recommended.
 ** Processing of the fastq dataset
 *** Alignment of the reads to the destination vector and subsetting
 After the assembly reaction, many DNA components are part of the mix
-being sequenced with nanopore. Here we filter out the components that
-do not map to the destination vector (pVTSD2). 
+being sequenced with nanopore. In this step, we filter out the
+components that do not map to the destination vector (pVTSD2), and
+subsequently extract the regions of interest containing the assembly
+products.
 
 The pVTSD2 were linearized using the ecl136II restriction enzyme, so
 the available fasta sequence of pVTSD2 was rotated to match this
-starting/end site, and then indexed using samtools. The fastq dataset
-was then mapped to the vector using bwa mem. 
+starting/end site, and then indexed using bwa. 
+
+#+BEGIN_SRC bash
+bwa index -b bwtsw pVTSD2_Linear_ecl136II.fasta
+#+END_SRC
+
+Before mapping, we filtered the dataset of reads using NanoFilt, to
+keep reads that have the size of pVTSD2 (7,227bp) , adjusting for the
+size of the combinatorial assembly products (the molecular details can
+be found in the paper mentioned above, but in short, the SacB region
+of around 2000 bp get substituted with the assembly products). The
+size of the assemby product is comprised between 700 bp and 1181
+bp. Hence, we removed reads that were shorter than 5750 bp and longer
+than 6500 bp. This reduced the size of the dataset from 2.4M reads to
+200k reads.
+
+#+BEGIN_SRC bash
+cat reads.fastq | NanoFilt --length 5750 --maxlength 6500 > reads.filtered.fastq 
+#+END_SRC
+
+The filtered fastq dataset was then mapped to the vector using bwa
+mem.
+
+#+BEGIN_SRC bash
+bwa mem -t 16 -x ont2d pVTSD2_Linear_ecl136II.fasta reads.filtered.fastq > aln.sam
+samtools view -b -o aln.bam aln.sam
+samtools sort -o aln.sorted.bam aln.sam
+samtools index aln.sorted.bam
+#+END_SRC
 
 Finally, the reads that map to pVTSD2 were further subset. Indeed, as
 part of the VersaTile reaction, a part of the vector gets substituted
 with the assembled product. It is thus possible to extract the region
-that doesn't map to the vector
+that don't map to the vector by looking for reads that are
+soft-clipped using the extractSoftClipped command from SE-MEI, and
+further remove the fragments that are between 700 and 1181 bp, leaving
+us with 70k reads.
 
 #+BEGIN_SRC bash
-samtools index pVTSD2_Linear_ecl136II.fasta
-bwa mem -t 16 -x ont2d pVTSD2_Linear_ecl136II.fasta 1D.fastq.tar.gz
+SE-MEI/extractSoftclipped aln.sorted.bam > unmapped.fastq.gz
+zcat unmapped.fastq.gz | NanoFilt --length 650 --maxlength 1250 > unmapped_650_1250.fastq
 #+END_SRC
 
-Note: minimap2 should be considered instead of bwa
 
-* Generation of count tables
+Note: minimap2 should be considered instead of bwa mem.
+
+* Count tables
+We generated the count tables using the python script
+/whatever.py/. The script uses the BioPython library to manipulate the
+fastq file and the localms function to align the components to the
+sequence.
+
+
 * Statistical analysis
