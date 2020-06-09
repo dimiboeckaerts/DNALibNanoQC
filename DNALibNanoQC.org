@@ -16,13 +16,13 @@ The raw sequencing data was basecalled using the software Albacore
 v2.3.1 (workflow r94_450bps_linear.cfg). 
 
 #+BEGIN_SRC bash
-read_fast5_basecaller.py --flowcell FLO-MIN106 \
-                         --kit SQK-LSK108 \
-                         --output_format fastq \
-                         --worker_threads 32 \
-                         --recursive \
-                         --files_per_batch_folder 0 \
-                         --save_path basecalled
+$ read_fast5_basecaller.py --flowcell FLO-MIN106 \
+                           --kit SQK-LSK108 \
+                           --output_format fastq \
+                           --worker_threads 32 \
+                           --recursive \
+                           --files_per_batch_folder 0 \
+                           --save_path basecalled
 #+END_SRC
 
 Note: since 2019, the basecaller guppy is available and recommended.
@@ -40,7 +40,7 @@ the available fasta sequence of pVTSD2 was rotated to match this
 starting/end site, and then indexed using bwa. 
 
 #+BEGIN_SRC bash
-bwa index -b bwtsw pVTSD2_Linear_ecl136II.fasta
+$ bwa index -b bwtsw pVTSD2_Linear_ecl136II.fasta
 #+END_SRC
 
 Before mapping, we filtered the dataset of reads using NanoFilt, to
@@ -54,17 +54,17 @@ than 6500 bp. This reduced the size of the dataset from 2.4M reads to
 200k reads.
 
 #+BEGIN_SRC bash
-cat reads.fastq | NanoFilt --length 5750 --maxlength 6500 > reads.filtered.fastq 
+$ cat reads.fastq | NanoFilt --length 5750 --maxlength 6500 > reads.filtered.fastq 
 #+END_SRC
 
 The filtered fastq dataset was then mapped to the vector using bwa
 mem.
 
 #+BEGIN_SRC bash
-bwa mem -t 16 -x ont2d pVTSD2_Linear_ecl136II.fasta reads.filtered.fastq > aln.sam
-samtools view -b -o aln.bam aln.sam
-samtools sort -o aln.sorted.bam aln.sam
-samtools index aln.sorted.bam
+$ bwa mem -t 16 -x ont2d pVTSD2_Linear_ecl136II.fasta reads.filtered.fastq > aln.sam
+$ samtools view -b -o aln.bam aln.sam
+$ samtools sort -o aln.sorted.bam aln.sam
+$ samtools index aln.sorted.bam
 #+END_SRC
 
 Finally, the reads that map to pVTSD2 were further subset. Indeed, as
@@ -76,8 +76,8 @@ further remove the fragments that are between 700 and 1181 bp, leaving
 us with 70k reads.
 
 #+BEGIN_SRC bash
-SE-MEI/extractSoftclipped aln.sorted.bam > unmapped.fastq.gz
-zcat unmapped.fastq.gz | NanoFilt --length 650 --maxlength 1250 > unmapped_650_1250.fastq
+$ SE-MEI/extractSoftclipped aln.sorted.bam > unmapped.fastq.gz
+$ zcat unmapped.fastq.gz | NanoFilt --length 650 --maxlength 1250 > unmapped_650_1250.fastq
 #+END_SRC
 
 
@@ -85,9 +85,40 @@ Note: minimap2 should be considered instead of bwa mem.
 
 * Count tables
 We generated the count tables using the python script
-/whatever.py/. The script uses the BioPython library to manipulate the
-fastq file and the localms function to align the components to the
-sequence.
+/DNA_blocks_analysis.py/. The script uses the BioPython library to
+manipulate the fastq file and the localms function to align the
+components to the sequence. Note that this task is slower, but can
+easily be parallelized using fastq-splitter and running the script on
+batch of reads.
 
+The general steps are:
+- modifying the fasta files of the DNA blocks to add the linker
+  elements (see 
+- iterate through the reads dataset and align the DNA blocks of each
+  position using local alignments
+- calculating the distance between the aligned blocks (in our case
+  block2 was ignored as it is a short linker) 
+- verifying the synteny and saving the pass/fail results
+
+The dataset looks like this:
+
+| ReadId | TileName         | TileLength | AlignmentLengt | Start | Stop | AlignmentScore |
+|--------+------------------+------------+----------------+-------+------+----------------|
+|      1 | CecropinAD       |        132 |            132 |    77 |  209 |          526.0 |
+|      1 | Flexiblemedian   |         54 |             56 |   190 |  246 |          185.0 |
+|      1 | 201j2-1gp229-CBD |        267 |            268 |   240 |  508 |         1211.0 |
+|      1 | PVP-SE1gp146-EAD |        561 |            566 |   499 | 1065 |         2298.0 |
+|      2 | SMAP29           |         99 |            101 |    79 |  180 |          376.0 |
+|      2 | Flexiblemedian   |         54 |             54 |   172 |  226 |          209.0 |
+|      2 | OBPgp279-CBD     |        396 |            398 |   218 |  616 |         1477.0 |
+|      2 | BcepC6Bgp22      |        507 |            477 |   580 | 1057 |         1881.0 |
+
+In the rest of the analysis, we will focus on the pass results. In
+order to extract the counts of unique tiles, and combinations, we
+simply used the linux tools cut, sort, and uniq:
+
+#+BEGIN_SRC bash
+$ cut -d, -f3 reads_pass.csv | sort | uniq -c
+#+END_SRC
 
 * Statistical analysis
