@@ -100,25 +100,54 @@ The general steps are:
   block2 was ignored as it is a short linker) 
 - verifying the synteny and saving the pass/fail results
 
-The dataset looks like this:
+The dataset looks like this for the first 2 reads:
 
-| ReadId | TileName         | TileLength | AlignmentLengt | Start | Stop | AlignmentScore |
-|--------+------------------+------------+----------------+-------+------+----------------|
-|      1 | CecropinAD       |        132 |            132 |    77 |  209 |          526.0 |
-|      1 | Flexiblemedian   |         54 |             56 |   190 |  246 |          185.0 |
-|      1 | 201j2-1gp229-CBD |        267 |            268 |   240 |  508 |         1211.0 |
-|      1 | PVP-SE1gp146-EAD |        561 |            566 |   499 | 1065 |         2298.0 |
-|      2 | SMAP29           |         99 |            101 |    79 |  180 |          376.0 |
-|      2 | Flexiblemedian   |         54 |             54 |   172 |  226 |          209.0 |
-|      2 | OBPgp279-CBD     |        396 |            398 |   218 |  616 |         1477.0 |
-|      2 | BcepC6Bgp22      |        507 |            477 |   580 | 1057 |         1881.0 |
+| Read Id | Tile Identified  | Tile Length | Align Length | Start | Stop |  Score |
+|---------+------------------+-------------+--------------+-------+------+--------|
+|       1 | CecropinAD       |         132 |          132 |    77 |  209 |  526.0 |
+|       1 | Flexiblemedian   |          54 |           56 |   190 |  246 |  185.0 |
+|       1 | 201j2-1gp229-CBD |         267 |          268 |   240 |  508 | 1211.0 |
+|       1 | PVP-SE1gp146-EAD |         561 |          566 |   499 | 1065 | 2298.0 |
+|       2 | SMAP29           |          99 |          101 |    79 |  180 |  376.0 |
+|       2 | Flexiblemedian   |          54 |           54 |   172 |  226 |  209.0 |
+|       2 | OBPgp279-CBD     |         396 |          398 |   218 |  616 | 1477.0 |
+|       2 | BcepC6Bgp22      |         507 |          477 |   580 | 1057 | 1881.0 |
 
 In the rest of the analysis, we will focus on the pass results. In
 order to extract the counts of unique tiles, and combinations, we
 simply used the linux tools cut, sort, and uniq:
 
 #+BEGIN_SRC bash
-$ cut -d, -f3 reads_pass.csv | sort | uniq -c
+$ tail -n +2 reads_pass.csv |                # ignore header
+  cut -d, -f3,5 --output-delimiter=$'\t' |   # take tile names and position
+  sort | uniq -c |                           # sort and count 
+  awk '{print $2 "\t" $3 "\t" $1}' |         # reorganize results
+  sort -nk 2 > count_table_single_tiles.csv  # sort results by position & save
 #+END_SRC
+
+| Tile Identified | Position | Count |
+|-----------------+----------+-------|
+| 3IQ2            |        1 |  1670 |
+| Ascaphine       |        1 |  1428 |
+| Buforin 1       |        1 |  1601 |
+| Cathelicidin    |        1 |  2011 |
+
+For the combinations:
+#+BEGIN_SRC bash
+$ tail -n +2 blocks.csv |                             # ignore header
+  cut -d, -f2 |                                       # extract tile names
+  xargs -L 4 |                                        # analyse by groups of 4 lines
+  tr " " "_" |                                        # concatenate tile names (by groups of 4)
+  sort | uniq -c |                                    # sort and count  
+  awk '{print $2 "\t" $1}' |                          # reorganize results  
+  sort -r -nk2 > count_table_combinations_tiles.csv   # sort results & save
+#+END_SRC
+
+| Tiles combination                               | Count |
+|-------------------------------------------------+-------|
+| CecropinAD_Flexiblemedian_K11gp3.5_XccBg35      |   115 |
+| Sarcotoxin_Flexiblemedian_K11gp3.5_XccBg35      |    97 |
+| CecropinAD_Flexiblemedian_EL188-CBD_BcepC6Bgp22 |    77 |
+| CecropinAD_Flexiblemedian_K11gp3.5_BcepC6Bgp22  |    72 |
 
 * Statistical analysis
