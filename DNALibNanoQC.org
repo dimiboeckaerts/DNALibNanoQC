@@ -113,6 +113,11 @@ The dataset looks like this for the first 2 reads:
 |       2 | OBPgp279-CBD     |         396 |          398 |   218 |  616 | 1477.0 |
 |       2 | BcepC6Bgp22      |         507 |          477 |   580 | 1057 | 1881.0 |
 
+Note: the computation of the local alignment with the function from
+BioPython is CPU-bound. However, the task is easily parallelized. We
+recommend splitting the fastq file (eg, using fastq-splitter.pl) and
+distribute the computation across multiple CPUs.
+
 In the rest of the analysis, we will focus on the pass results. In
 order to extract the counts of unique tiles, and combinations, we
 simply used the linux tools cut, sort, and uniq:
@@ -122,7 +127,7 @@ $ tail -n +2 reads_pass.csv |                # ignore header
   cut -d, -f3,5 --output-delimiter=$'\t' |   # take tile names and position
   sort | uniq -c |                           # sort and count 
   awk '{print $2 "\t" $3 "\t" $1}' |         # reorganize results
-  sort -nk 2 > count_table_single_tiles.csv  # sort results by position & save
+  sort -nk 2 > count_table_single_blocks.csv  # sort results by position & save
 #+END_SRC
 
 | Tile Identified | Position | Count |
@@ -150,4 +155,22 @@ $ tail -n +2 blocks.csv |                             # ignore header
 | CecropinAD_Flexiblemedian_EL188-CBD_BcepC6Bgp22 |    77 |
 | CecropinAD_Flexiblemedian_K11gp3.5_BcepC6Bgp22  |    72 |
 
+Also considering linkers as a single condition:
+#+BEGIN_SRC bash
+$ tail -n +2 blocks.csv |                             # ignore header
+  grep -v "Flexible" |                                # exclude linkers
+  cut -d, -f2 |                                       # extract tile names
+  xargs -L 3 |                                        # analyse by groups of 3 lines
+  tr " " "_" |                                        # concatenate tile names (by groups of 4)
+  sort | uniq -c |                                    # sort and count  
+  awk '{print $2 "\t" $1}' |                          # reorganize results  
+  sort -r -nk2 > count_table_combinations_tiles.csv   # sort results & save
+#+END_SRC
 * Statistical analysis
+We used the R programming environment to showcase some visualizations
+and statistics one could use to assess the DNA library. The related
+code can be found in the /data_exploration.R/.
+
+** Individual building blocks analysis
+
+** Combinations of building blocks analysis
