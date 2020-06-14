@@ -39,7 +39,7 @@ pos2 = fasta_upper(list(SeqIO.parse(os.path.join(FASTA, "tiles_position1.fasta")
 pos3 = fasta_upper(list(SeqIO.parse(os.path.join(FASTA, "tiles_position3.fasta"), "fasta")))
 pos4 = fasta_upper(list(SeqIO.parse(os.path.join(FASTA, "tiles_position4.fasta"), "fasta")))
 
-# the tiles have position specific, linker sequences 
+# the tiles have position specific linker sequences 
 for fasta in pos1:
     fasta.seq = "ACCATG" + fasta.seq + "GGTGCA"
 
