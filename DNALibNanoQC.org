@@ -179,5 +179,12 @@ and statistics one could use to assess the DNA library. The related
 code can be found in the /data_exploration.R/.
 
 ** Individual building blocks analysis
+[[.img/single_blocks.png]]
+
+[[.img/single_blocks_linkers.png]]
 
 ** Combinations of building blocks analysis
+
+[[.img/combinations_blocks_distribution.png]]
+
+[[.img/combinations_blocks_no_linker.png]]

@@ -111,6 +111,25 @@ ggplotly(p2)
 ggplotly(p3)
 ggplotly(p4)
 
+
+########################################################################
+# Zooming in on the linker position, which shows the largest imbalance #
+########################################################################
+
+# subsetting dataset to linkers only
+blocks <- read.csv("reads_pass.csv", header=TRUE, sep=",")
+linkers <- subset(blocks, TileName == "Flexiblemedian" | TileName == "Flexibleshort")
+
+ggplot(data=linkers, aes(AlignmentLength)) +
+  geom_histogram(aes(y =..density..), fill="blue", col="blue", alpha=.4, binwidth = 2) +
+  stat_density(col="darkgreen", geom="line") +
+  geom_vline(xintercept = 30, linetype="dashed", color="red")+
+  annotate("text", label= "Short linker (30 nt)", x=25, y=0.047) +
+  annotate("text", label= "Long linker (54 nt)", x=49, y=0.047) +
+  geom_vline(xintercept = 54, linetype="dashed", color= "red")+
+  theme_update(plot.title = element_text(hjust = 0.5)) +
+  labs(title="Linker size distribution", x="Linker length (nt)", y="Density (count)") 
+
 ############################
 # 3. Analysis of all tiles #
 ############################
@@ -165,7 +184,7 @@ colnames(tmp.counts) <- c("Counts", "Freq")
 final.counts <- merge(counts.combinations, tmp.counts, by="Counts", all.x=TRUE) # Left outer join
 final.counts$Freq[is.na(final.counts$Freq)] <- 0
 
-# generation of datasets using lnorm and weibull with fitted parameters
+# generation of datasets using multiple distributions with fitted parameters
 simulated.poisson <- dpois(1:max.combinations, lambda=fit_p$estimate["lambda"], log=FALSE)
 simulated.uniform <- dunif(1:max.combinations, min=fit_u$estimate["min"], max=fit_u$estimate["max"])
 simulated.exp <- dexp(1:max.combinations, rate=fit_e$estimate["rate"])
@@ -186,19 +205,7 @@ chisq.test(x=final.counts$Freq, p=simulated.gamma, simulate.p.value=TRUE, rescal
 # exploration of linker size distribution        #
 ##################################################
 
-# subsetting dataset to linkers only
-blocks <- read.csv("reads_pass.csv", header=TRUE, sep=",")
-linkers <- subset(blocks, TileName == "Flexiblemedian" | TileName == "Flexibleshort")
 
-ggplot(data=linkers, aes(AlignmentLength)) +
-  geom_histogram(aes(y =..density..), fill="blue", col="blue", alpha=.4, binwidth = 2) +
-  stat_density(col="darkgreen", geom="line") +
-  geom_vline(xintercept = 30, linetype="dashed", color="red")+
-  annotate("text", label= "Short linker (30 nt)", x=25, y=0.047) +
-  annotate("text", label= "Long linker (54 nt)", x=49, y=0.047) +
-  geom_vline(xintercept = 54, linetype="dashed", color= "red")+
-  theme_update(plot.title = element_text(hjust = 0.5)) +
-  labs(title="Linker size distribution", x="Linker length (nt)", y="Density (count)") 
 
 # considering linkers as a single condition
 combinations.blocks.nolinker <- read.csv("count_table_combinations_tiles_no_linkers.csv", header=FALSE, sep="\t", col.names =c("TileCombination", "Count"))
@@ -208,31 +215,25 @@ plotdist(combinations.blocks.nolinker$Count, histo=TRUE, discrete=TRUE)
 descdist(combinations.blocks.nolinker$Count, boot=500, method="sample")
 
 # fitting different distributions with the dataset
-fit_p <- fitdist(combinations.blocks.nolinker$Count, "pois")
-fit_u <- fitdist(combinations.blocks.nolinker$Count, "unif")
-fit_e <- fitdist(combinations.blocks.nolinker$Count, "exp")
 fit_ln <- fitdist(combinations.blocks.nolinker$Count, "lnorm")
 fit_w <- fitdist(combinations.blocks.nolinker$Count, "weibull")
 fit_g <- fitdist(combinations.blocks.nolinker$Count, "gamma")
 
 # parameters of each model
-summary(fit_p)
-summary(fit_u)
-summary(fit_e)
 summary(fit_ln)
 summary(fit_w)
 summary(fit_g)
 
 # plotting side by side all the models
 par(mfrow=c(2,2))
-plot.legend <- c("poisson", "uniform", "exp", "lognormal", "weibull", "gamma")
-denscomp(list(fit_p, fit_u, fit_e, fit_ln, fit_w, fit_g), legendtext = plot.legend)
-cdfcomp (list(fit_p, fit_u, fit_e, fit_ln, fit_w, fit_g), legendtext = plot.legend)
-qqcomp  (list(fit_p, fit_u, fit_e, fit_ln, fit_w, fit_g), legendtext = plot.legend)
-ppcomp  (list(fit_p, fit_u, fit_e, fit_ln, fit_w, fit_g), legendtext = plot.legend)
+plot.legend <- c("lognormal", "weibull", "gamma")
+denscomp(list(fit_ln, fit_w, fit_g), legendtext = plot.legend)
+cdfcomp (list(fit_ln, fit_w, fit_g), legendtext = plot.legend)
+qqcomp  (list(fit_ln, fit_w, fit_g), legendtext = plot.legend)
+ppcomp  (list(fit_ln, fit_w, fit_g), legendtext = plot.legend)
 
 # goodness of fit
-gofstat(list(fit_p, fit_u, fit_e, fit_ln, fit_w, fit_g), fitnames = c("pois", "unif", "exp", "logn", "weibull", "gamma"))
+gofstat(list(fit_ln, fit_w, fit_g), fitnames = c("logn", "weibull", "gamma"))
 
 # transforming dataset to have each column being the times combinations occur, ie:
 # no combination is missing
@@ -250,18 +251,12 @@ colnames(tmp.counts) <- c("Counts", "Freq")
 final.counts <- merge(counts.combinations, tmp.counts, by="Counts", all.x=TRUE) # Left outer join
 final.counts$Freq[is.na(final.counts$Freq)] <- 0
 
-# generation of datasets using lnorm and weibull with fitted parameters
-simulated.poisson <- dpois(1:max.combinations, lambda=fit_p$estimate["lambda"])
-simulated.uniform <- dunif(1:max.combinations, min=fit_u$estimate["min"], max=fit_u$estimate["max"])
-simulated.exp <- dexp(1:max.combinations, rate=fit_e$estimate["rate"])
+# generation of datasets using lnorm, weibull, and gamma with fitted parameters
 simulated.ln <- dlnorm(1:max.combinations, meanlog=fit_ln$estimate["meanlog"], sdlog=fit_ln$estimate["sdlog"])
 simulated.weibull <- dweibull(1:max.combinations, shape=fit_w$estimate["shape"], scale=fit_w$estimate["scale"])
 simulated.gamma <- dgamma(1:max.combinations, shape=fit_g$estimate["shape"], rate=fit_g$estimate["rate"])
 
 # testing empirical distribution vs fitted model using chisquare
-chisq.test(x=final.counts$Freq, y=simulated.poisson, simulate.p.value=TRUE, rescale.p = TRUE)
-chisq.test(x=final.counts$Freq, y=simulated.uniform, simulate.p.value=TRUE, rescale.p = TRUE)
-chisq.test(x=final.counts$Freq, p=simulated.exp, simulate.p.value=TRUE, rescale.p = TRUE)
 chisq.test(x=final.counts$Freq, p=simulated.ln, simulate.p.value=TRUE,  rescale.p = TRUE)
 chisq.test(x=final.counts$Freq, p=simulated.weibull, simulate.p.value=TRUE, rescale.p = TRUE)
 chisq.test(x=final.counts$Freq, p=simulated.gamma, simulate.p.value=TRUE, rescale.p = TRUE)
