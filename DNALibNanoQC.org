@@ -10,6 +10,29 @@ The combinatorial DNA library created was prepared usng the 1D
 ligation approach (SQK-LSK108), without barcoding, and sequenced on a
 Nanopore MinION device, equiped with a flowcell FLO-MIN109.
 
+* Environment
+We have provided an environment file that documents the computing
+environment and which can be used with Conda.
+
+#+BEGIN_SRC bash
+conda create -n DANLibQC --file requirements.txt
+#+END_SRC
+
+Other software used in this project that are not available through
+conda include:
+
+- [[nanoporetech.com][Albacore basecaller]]
+- [[https://github.com/dpryan79/SE-MEI][SE-MEI]]
+- [[https://kirill-kryukov.com/study/tools/fastq-splitter/][Fastq-splitter (optional)]]
+
+For the analysis with R, we used Rstudio v1.3.959, with R v3.4.4 and
+the following packages:
+
+- rstudioapi v0.11
+- ggplot2 v3.3.1
+- plotly v4.9.2.1
+- fitdistrplus v1.1-1
+
 * Nanopore Sequencing and Data processing
 ** Basecalling
 The raw sequencing data was basecalled using the software Albacore
@@ -64,13 +87,15 @@ $ cat reads.fastq | NanoFilt --length 5750 --maxlength 6500 > reads.filtered.fas
 #+END_SRC
 
 The filtered fastq dataset was then mapped to the vector using bwa
-mem.
+mem. The qualimap command allowed us to estimate the /General error
+rate/ to 16%.
 
 #+BEGIN_SRC bash
 $ bwa mem -t 16 -x ont2d pVTSD2_Linear_ecl136II.fasta reads.filtered.fastq > aln.sam
 $ samtools view -b -o aln.bam aln.sam
 $ samtools sort -o aln.sorted.bam aln.sam
 $ samtools index aln.sorted.bam
+$ qualimap bamqc -bam aln.sorted.bam -outfile bamqc.report.pdf --java-mem-size=8G
 #+END_SRC
 
 Finally, the reads that map to pVTSD2 were further subset. Indeed, as
