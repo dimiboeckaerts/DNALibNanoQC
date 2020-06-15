@@ -106,7 +106,8 @@ substituted with the assembled product. It is thus possible to extract
 the region that do not map to the vector by looking for reads that are
 soft-clipped using the extractSoftClipped command from SE-MEI. We and
 further filtered the fragments that are between 650 and 1250 bp,
-leaving us with 70k reads.
+leaving us with 70k reads, representing about 4.2% of the original
+dataset of reads (1.68M).
 
 #+BEGIN_SRC bash
 $ SE-MEI/extractSoftclipped aln.sorted.bam > unmapped.fastq.gz
@@ -124,13 +125,18 @@ components to the reads. Note that this task is slow, but can easily
 be parallelized using fastq-splitter and running the script on batches
 of reads.
 
+#+BEGIN_SRC bash
+$ python DNA_blocks_analysis.py unmapped_650_1250.fastq blocks.csv
+#+END_SRC
+
 The general steps are:
 - modifying the fasta files of the [[./sequences/][DNA building blocks]] to add the
   position specific linker elements.
 - iterate through the reads dataset and align the DNA blocks of each
   position using local alignments.
 - calculating the distance between the aligned blocks.
-- verifying the synteny and saving the results.
+- verifying the synteny of the reads (Flag to 1 if the blocks are too
+  distant), and saving the results.
 
 The output (passing) dataset looks like this for the first 2 reads:
 
