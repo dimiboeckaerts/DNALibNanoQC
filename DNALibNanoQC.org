@@ -50,7 +50,7 @@ $ read_fast5_basecaller.py --flowcell FLO-MIN106 \
                            --save_path basecalled
 #+END_SRC
 
-In total, 1.68M reads were obtained totalling 1.68 Gbp, with the
+In total, 1.68M reads were obtained totalling 6.28 Gbp, with the
 following size distribution:
 
 [[./img/WeightedReadLength.png]]
@@ -225,7 +225,7 @@ how they distribute within a given position in the assembly:
 
 We can also focus on a given position, eg position 2 where a linker
 element is assembled between the OMP and the CBD. This position has 2
-canditate blocks, and we can see the short linker (Flexibleshort) is
+candidate blocks, and we can see the short linker (Flexibleshort) is
 not as represented as the long linker (Flexiblelong).
 
  [[./img/single_blocks_linkers.png]]
