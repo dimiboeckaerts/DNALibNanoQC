@@ -15,13 +15,13 @@ We have provided an environment file that documents the computing
 environment and which can be used with Conda.
 
 #+BEGIN_SRC bash
-conda create -n DANLibQC --file requirements.txt
+$ conda create -n DANLibQC --file requirements.txt
 #+END_SRC
 
 Other software used in this project that are not available through
 conda include:
 
-- [[nanoporetech.com][Albacore basecaller]]
+- [[https://nanoporetech.com][Albacore basecaller]]
 - [[https://github.com/dpryan79/SE-MEI][SE-MEI]]
 - [[https://kirill-kryukov.com/study/tools/fastq-splitter/][Fastq-splitter (optional)]]
 
@@ -49,7 +49,7 @@ $ read_fast5_basecaller.py --flowcell FLO-MIN106 \
                            --save_path basecalled
 #+END_SRC
 
-In total, 2.48M reads were obtained totalling 9.56 Gbp, with the
+In total, 1.68M reads were obtained totalling 1.68 Gbp, with the
 following size distribution:
 
 [[./img/WeightedReadLength.png]]
@@ -112,8 +112,8 @@ $ zcat unmapped.fastq.gz | NanoFilt --length 650 --maxlength 1250 > unmapped_650
 #+END_SRC
 
 
-Note: minimap2 should be considered instead of bwa mem. [[https://lh3.github.io/2018/04/02/minimap2-and-the-future-of-bwa][You can find
-the rationale for minimap2 over bwa-mem here.]] 
+Remark: minimap2 should be considered instead of bwa-mem. [[https://lh3.github.io/2018/04/02/minimap2-and-the-future-of-bwa][You can find
+the rationale for minimap2 over bwa-mem here.]]
 
 * Count tables
 We generated the count tables using the python script
@@ -144,6 +144,7 @@ The dataset looks like this for the first 2 reads:
 |       2 | Flexiblemedian   |          54 |           54 |   172 |  226 |  209.0 |
 |       2 | OBPgp279-CBD     |         396 |          398 |   218 |  616 | 1477.0 |
 |       2 | BcepC6Bgp22      |         507 |          477 |   580 | 1057 | 1881.0 |
+|    etc. |                  |             |              |       |      |        |
 
 Note: the computation of the local alignment with the function from
 BioPython is CPU-bound. However, the task is easily parallelized. We
@@ -185,7 +186,7 @@ $ tail -n +2 blocks.csv |                             # ignore header
 | CecropinAD_Flexiblemedian_K11gp3.5_XccBg35      |   115 |
 | Sarcotoxin_Flexiblemedian_K11gp3.5_XccBg35      |    97 |
 | CecropinAD_Flexiblemedian_EL188-CBD_BcepC6Bgp22 |    77 |
-| CecropinAD_Flexiblemedian_K11gp3.5_BcepC6Bgp22  |    72 |
+| etc.                                            |       |
 
 Also considering linkers as a single condition:
 #+BEGIN_SRC bash
@@ -198,6 +199,13 @@ $ tail -n +2 blocks.csv |                             # ignore header
   awk '{print $2 "\t" $1}' |                          # reorganize results  
   sort -r -nk2 > count_table_combinations_tiles.csv   # sort results & save
 #+END_SRC
+
+| Tiles combination           | Count |
+|-----------------------------+-------|
+| CecropinAD_K11gp3.5_XccBg35 |   140 |
+| Sarcotoxin_K11gp3.5_XccBg35 |   124 |
+| etc.                        |       |
+
 * Statistical analysis
 We used the R programming environment to showcase some visualizations
 and statistics one could use to assess the DNA library. The related
