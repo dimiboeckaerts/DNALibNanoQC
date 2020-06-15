@@ -6,27 +6,28 @@ analyzed as part of the publication:
 
 DOI: 10.1126/sciadv.aaz1136
 
-The combinatorial DNA library created was prepared usng the 1D
-ligation approach (SQK-LSK108), without barcoding, and sequenced on a
-Nanopore MinION device, equiped with a flowcell FLO-MIN109.
+The combinatorial DNA library was created using the VersaTile reaction
+and the sequencing library was prepared using the 1D ligation approach
+(SQK-LSK108), without barcoding, and sequenced on a Nanopore MinION
+device, equiped with a flowcell FLO-MIN109 (R9.4.1).
 
 * Environment
-We have provided an environment file that documents the computing
+We have provided a requirements.txt file that documents the computing
 environment and which can be used with Conda.
 
 #+BEGIN_SRC bash
-$ conda create -n DANLibQC --file requirements.txt
+$ conda create -n DNALibNanoQC --file requirements.txt
 #+END_SRC
 
-Other software used in this project that are not available through
+Other softwares used in this project that are not available through
 conda include:
 
 - [[https://nanoporetech.com][Albacore basecaller]]
 - [[https://github.com/dpryan79/SE-MEI][SE-MEI]]
 - [[https://kirill-kryukov.com/study/tools/fastq-splitter/][Fastq-splitter (optional)]]
 
-For the analysis with R, we used Rstudio v1.3.959, with R v3.4.4 and
-the following packages:
+For the count tables analysis, we used Rstudio v1.3.959 with R v3.4.4
+and the following packages:
 
 - rstudioapi v0.11
 - ggplot2 v3.3.1
@@ -73,14 +74,14 @@ $ bwa index -b bwtsw pVTSD2_Linear_ecl136II.fasta
 #+END_SRC
 
 Before mapping, we filtered the dataset of reads using NanoFilt, to
-keep reads that have the size of pVTSD2 (7,227bp) , adjusting for the
-size of the combinatorial assembly products (the molecular details can
-be found in the paper mentioned above, but in short, the SacB region
-of around 2000 bp get substituted with the assembly products). The
-size of the assemby product is comprised between 700 bp and 1181
-bp. Hence, we removed reads that were shorter than 5750 bp and longer
-than 6500 bp. This reduced the size of the dataset from 2.4M reads to
-200k reads.
+keep reads that have around the size of pVTSD2 (7,227 bp), adjusting
+for the size of the combinatorial assembly products (the molecular
+details can be found in the paper mentioned above, but in short, the
+SacB region of about 2,000 bp get substituted with the assembly
+products). The size of the assemby product is comprised between 709 bp
+and 1186 bp, so we removed the reads that were shorter than 5750 bp
+and longer than 6500 bp. This reduced the size of the dataset from
+1.68M reads to 200k reads.
 
 #+BEGIN_SRC bash
 $ cat reads.fastq | NanoFilt --length 5750 --maxlength 6500 > reads.filtered.fastq 
@@ -88,7 +89,8 @@ $ cat reads.fastq | NanoFilt --length 5750 --maxlength 6500 > reads.filtered.fas
 
 The filtered fastq dataset was then mapped to the vector using bwa
 mem. The qualimap command allowed us to estimate the /General error
-rate/ to 16%.
+rate/ to 16%, highlighting the expected error rate found in the single
+nanopore reads we obtained.
 
 #+BEGIN_SRC bash
 $ bwa mem -t 16 -x ont2d pVTSD2_Linear_ecl136II.fasta reads.filtered.fastq > aln.sam
@@ -98,19 +100,18 @@ $ samtools index aln.sorted.bam
 $ qualimap bamqc -bam aln.sorted.bam -outfile bamqc.report.pdf --java-mem-size=8G
 #+END_SRC
 
-Finally, the reads that map to pVTSD2 were further subset. Indeed, as
-part of the VersaTile reaction, a part of the vector gets substituted
-with the assembled product. It is thus possible to extract the region
-that don't map to the vector by looking for reads that are
-soft-clipped using the extractSoftClipped command from SE-MEI, and
-further remove the fragments that are between 700 and 1181 bp, leaving
-us with 70k reads.
+Finally, the reads that mapped to pVTSD2 were further subset. Indeed,
+as part of the VersaTile reaction, a part of the vector gets
+substituted with the assembled product. It is thus possible to extract
+the region that do not map to the vector by looking for reads that are
+soft-clipped using the extractSoftClipped command from SE-MEI. We and
+further filtered the fragments that are between 650 and 1250 bp,
+leaving us with 70k reads.
 
 #+BEGIN_SRC bash
 $ SE-MEI/extractSoftclipped aln.sorted.bam > unmapped.fastq.gz
 $ zcat unmapped.fastq.gz | NanoFilt --length 650 --maxlength 1250 > unmapped_650_1250.fastq
 #+END_SRC
-
 
 Remark: minimap2 should be considered instead of bwa-mem. [[https://lh3.github.io/2018/04/02/minimap2-and-the-future-of-bwa][You can find
 the rationale for minimap2 over bwa-mem here.]]
@@ -119,32 +120,31 @@ the rationale for minimap2 over bwa-mem here.]]
 We generated the count tables using the python script
 /DNA_blocks_analysis.py/. The script uses the BioPython library to
 manipulate the fastq file and the localms function to align the
-components to the sequence. Note that this task is slower, but can
-easily be parallelized using fastq-splitter and running the script on
-batch of reads.
+components to the reads. Note that this task is slow, but can easily
+be parallelized using fastq-splitter and running the script on batches
+of reads.
 
 The general steps are:
-- modifying the fasta files of the DNA blocks to add the linker
-  elements (see 
+- modifying the fasta files of the [[./sequences/][DNA building blocks]] to add the
+  position specific linker elements.
 - iterate through the reads dataset and align the DNA blocks of each
-  position using local alignments
-- calculating the distance between the aligned blocks (in our case
-  block2 was ignored as it is a short linker) 
-- verifying the synteny and saving the pass/fail results
+  position using local alignments.
+- calculating the distance between the aligned blocks.
+- verifying the synteny and saving the results.
 
-The dataset looks like this for the first 2 reads:
+The output (passing) dataset looks like this for the first 2 reads:
 
-| Read Id | Tile Identified  | Tile Length | Align Length | Start | Stop |  Score |
-|---------+------------------+-------------+--------------+-------+------+--------|
-|       1 | CecropinAD       |         132 |          132 |    77 |  209 |  526.0 |
-|       1 | Flexiblemedian   |          54 |           56 |   190 |  246 |  185.0 |
-|       1 | 201j2-1gp229-CBD |         267 |          268 |   240 |  508 | 1211.0 |
-|       1 | PVP-SE1gp146-EAD |         561 |          566 |   499 | 1065 | 2298.0 |
-|       2 | SMAP29           |          99 |          101 |    79 |  180 |  376.0 |
-|       2 | Flexiblemedian   |          54 |           54 |   172 |  226 |  209.0 |
-|       2 | OBPgp279-CBD     |         396 |          398 |   218 |  616 | 1477.0 |
-|       2 | BcepC6Bgp22      |         507 |          477 |   580 | 1057 | 1881.0 |
-|    etc. |                  |             |              |       |      |        |
+| Read Id | Tile Identified  | Tile Length | Align Length | Start | Stop |  Score | Distance | Flag |
+|---------+------------------+-------------+--------------+-------+------+--------+----------+------|
+|       1 | CecropinAD       |         132 |          132 |    77 |  209 |  526.0 |      -19 |    0 |
+|       1 | Flexiblemedian   |          54 |           56 |   190 |  246 |  185.0 |       -6 |    0 |
+|       1 | 201j2-1gp229-CBD |         267 |          268 |   240 |  508 | 1211.0 |      -10 |    0 |
+|       1 | PVP-SE1gp146-EAD |         561 |          566 |   499 | 1065 | 2298.0 |        0 |    0 |
+|       2 | SMAP29           |          99 |          101 |    79 |  180 |  376.0 |       -9 |    0 |
+|       2 | Flexiblemedian   |          54 |           54 |   172 |  226 |  209.0 |       -8 |    0 |
+|       2 | OBPgp279-CBD     |         396 |          398 |   218 |  616 | 1477.0 |      -36 |    0 |
+|       2 | BcepC6Bgp22      |         507 |          477 |   580 | 1057 | 1881.0 |        0 |    0 |
+|    etc. |                  |             |              |       |      |        |          |      |
 
 Note: the computation of the local alignment with the function from
 BioPython is CPU-bound. However, the task is easily parallelized. We
@@ -212,12 +212,27 @@ and statistics one could use to assess the DNA library. The related
 code can be found in the /data_exploration.R/.
 
 ** Individual building blocks analysis
-[[./img/single_blocks.png]]
+With these graphs, we focus on the blocks independently, by looking
+how they distribute within a given position in the assembly:
 
-[[./img/single_blocks_linkers.png]]
+ [[./img/single_blocks.png]]
+
+We can also focus on a given position, eg position 2 where a linker
+element is assembled between the OMP and the CBD. This position has 2
+canditate blocks, and we can see the short linker (Flexibleshort) is
+not as represented as the long linker (Flexiblelong).
+
+ [[./img/single_blocks_linkers.png]]
 
 ** Combinations of building blocks analysis
+Here we explore different models to fit the empirical distribution of
+our combinations.
 
 [[./img/combinations_blocks_distribution.png]]
+
+We can also explore the same dataset, but making some combinations
+single conditions (eg, the linker element in position 2). We also
+simplify the exploration by removing a few obvious "non-candidate
+distribution models" (eg, uniform and poisson).
 
 [[./img/combinations_blocks_no_linker.png]]
