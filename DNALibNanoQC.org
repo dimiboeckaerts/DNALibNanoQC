@@ -104,7 +104,7 @@ Finally, the reads that mapped to pVTSD2 were further subset. Indeed,
 as part of the VersaTile reaction, a part of the vector gets
 substituted with the assembled product. It is thus possible to extract
 the region that do not map to the vector by looking for reads that are
-soft-clipped using the extractSoftClipped command from SE-MEI. We and
+soft-clipped using the extractSoftClipped command from SE-MEI. We
 further filtered the fragments that are between 650 and 1250 bp,
 leaving us with 70k reads, representing about 4.2% of the original
 dataset of reads (1.68M).
