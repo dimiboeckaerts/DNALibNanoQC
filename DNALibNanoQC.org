@@ -217,7 +217,7 @@ $ tail -n +2 blocks.csv |                             # ignore header
 * Statistical analysis
 We used the R programming environment to showcase some visualizations
 and statistics one could use to assess the DNA library. The related
-code can be found in the [[./data_exploration.R][Count_tables_exploration.R]] 
+code can be found in the [[./Count_tables_exploration.R][Count_tables_exploration.R]] 
 
 ** Individual building blocks analysis
 With these graphs, we focus on the blocks independently, by looking
