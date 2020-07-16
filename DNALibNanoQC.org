@@ -10,8 +10,8 @@ The combinatorial DNA library was created using the VersaTile reaction
 and the sequencing library was prepared using the 1D ligation approach
 (SQK-LSK108), without barcoding, and sequenced on a Nanopore MinION
 device, equiped with a flowcell FLO-MIN109 (R9.4.1). The raw
-sequencing data is available in the NCBI SRA database with accession
-number SRR.
+sequencing data is available in the NCBI SRA database (see [[https://www.ncbi.nlm.nih.gov/bioproject/646613][BioProject
+PRJNA646613]]).
 
 * Environment
 We have provided a requirements.txt file that documents the computing

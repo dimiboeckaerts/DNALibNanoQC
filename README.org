@@ -1,7 +1,7 @@
 * DNALibNanoQC
-Using nanopore sequencing to validate the construction of
-combinatorial DNA libraries. The details of the analysis can be found
-in the [[DNALibNanoQC.org][DNALibNanoQC file]]
+We describe here a novel approach that uses nanopore sequencing to
+validate the construction of combinatorial DNA libraries. The details
+of the analysis can be found in the [[DNALibNanoQC.org][DNALibNanoQC file]]
 
 * Publication
 /Work in progress/
