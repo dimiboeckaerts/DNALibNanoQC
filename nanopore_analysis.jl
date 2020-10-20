@@ -20,6 +20,7 @@ using BioAlignments
 using BioSequences
 using DataFrames
 using FASTX
+using Dates
 
 
 # 1 - FUNCTIONS
@@ -85,7 +86,8 @@ tiles_p4, ids_p4 = fasta_to_array("/Users/dimi/Documents/GitHub_Local/DNALibNano
 #tiles = fasta_to_array("tiles.fasta") # more general
 
 nanopore_reads = fastq_to_array("/Users/dimi/Documents/GitHub_Local/DNALibNanoQC/test/nanopore_reads.fastq")
-nanopore_mini = nanopore_reads[1:1000]
+nanopore_mini = nanopore_reads[12000:14000]
+nanopore_toy, toy_ids = fasta_to_array("/Users/dimi/Documents/GitHub_Local/DNALibNanoQC/test/toy_reads.fasta")
 
 # add position markers
 tiles_p1 = [PM1*string(tile)*PM2 for tile in tiles_p1]
@@ -102,7 +104,7 @@ id_list_p3 = []
 alignments_list_p3 = []
 id_list_p4 = []
 alignments_list_p4 = []
-for nano_read in nanopore_mini
+for nano_read in nanopore_toy
     # position 1
     best_score_p1 = 0
     best_tile_p1 = ""
@@ -111,6 +113,7 @@ for nano_read in nanopore_mini
     for (i, tile) in enumerate(tiles_p1)
         tile_res, tile_score = local_alignment_score(LongDNASeq(tile), nano_read)
         if tile_score > best_score_p1
+            best_score_p1 = tile_score
             best_tile_p1 = tile
             best_id_p1 = ids_p1[i]
             best_alignment_p1 = split(string(tile_res.aln.a), "\n")[2]
@@ -127,6 +130,7 @@ for nano_read in nanopore_mini
     for (i, tile) in enumerate(tiles_p2)
         res, score = local_alignment_score(LongDNASeq(tile), read)
         if score > best_score_p2
+            best_score_p2 = tile_score
             best_tile_p2 = tile
             best_id_p2 = ids_p2[i]
             best_alignment_p2 = split(string(res.aln.a), "\n")[2]
@@ -143,6 +147,7 @@ for nano_read in nanopore_mini
     for (i, tile) in enumerate(tiles_p3)
         res, score = local_alignment_score(LongDNASeq(tile), read)
         if score > best_score_p3
+            best_score_p3 = tile_score
             best_tile_p3 = tile
             best_id_p3 = ids_p3[i]
             best_alignment_p3 = split(string(res.aln.a), "\n")[2]
@@ -159,6 +164,7 @@ for nano_read in nanopore_mini
     for (i, tile) in enumerate(tiles_p4)
         res, score = local_alignment_score(LongDNASeq(tile), read)
         if score > best_score_p4
+            best_score_p4 = tile_score
             best_tile_p4 = tile
             best_id_p4 = ids_p4[i]
             best_alignment_p4 = split(string(res.aln.a), "\n")[2]
