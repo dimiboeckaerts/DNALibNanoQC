@@ -10,7 +10,6 @@ TO DO & QUESTIONS:
 - how to go from Cedric's version to something we can use?
 - check the positions: count number of '-' in alignment? Test a single
     read with tiles in and see if they are detected and how (check alignment).
-- make toy example to see what's going on (same tiles detected always?)
 """
 
 # 0 - LIBRARIES
@@ -20,7 +19,7 @@ using BioAlignments
 using BioSequences
 using DataFrames
 using FASTX
-using Dates
+using ProgressMeter
 
 
 # 1 - FUNCTIONS
@@ -96,88 +95,113 @@ tiles_p3 = [PM3*string(tile)*PM4 for tile in tiles_p3]
 tiles_p4 = [PM4*string(tile)*PM5 for tile in tiles_p4]
 
 # do local alignments per position
+data = nanopore_reads
 id_list_p1 = []
-alignments_list_p1 = []
+alignments_list_p1 = []; alignments_start_p1 = []; alignments_stop_p1 = []
 id_list_p2 = []
-alignments_list_p2 = []
+alignments_list_p2 = []; alignments_start_p2 = []; alignments_stop_p2 = []
 id_list_p3 = []
-alignments_list_p3 = []
+alignments_list_p3 = []; alignments_start_p3 = []; alignments_stop_p3 = []
 id_list_p4 = []
-alignments_list_p4 = []
-for nano_read in nanopore_toy
+alignments_list_p4 = []; alignments_start_p4 = []; alignments_stop_p4 = []
+bar = Progress(length(data))
+
+for nano_read in data
     # position 1
     best_score_p1 = 0
-    best_tile_p1 = ""
-    best_id_p1 = ""
+    best_tile_p1 = ""; best_id_p1 = ""
     best_alignment_p1 = "" # the alignment of the tile
+    start_p1 = -1; stop_p1 = -1
     for (i, tile) in enumerate(tiles_p1)
         tile_res, tile_score = local_alignment_score(LongDNASeq(tile), nano_read)
         if tile_score > best_score_p1
             best_score_p1 = tile_score
             best_tile_p1 = tile
             best_id_p1 = ids_p1[i]
-            best_alignment_p1 = split(string(tile_res.aln.a), "\n")[2]
+            best_alignment_p1 = tile_res
+            start_p1 = tile_res.aln.a.aln.anchors[1].refpos
+            stop_p1 = tile_res.aln.a.aln.anchors[2].refpos
         end
     end
     push!(alignments_list_p1, best_alignment_p1)
     push!(id_list_p1, best_id_p1)
+    push!(alignments_start_p1, start_p1)
+    push!(alignments_stop_p1, stop_p1)
 
     # position 2
     best_score_p2 = 0
-    best_tile_p2 = ""
-    best_id_p2 = ""
+    best_tile_p2 = ""; best_id_p2 = ""
     best_alignment_p2 = "" # the alignment of the tile
+    start_p2 = -1; stop_p2 = -1
     for (i, tile) in enumerate(tiles_p2)
-        res, score = local_alignment_score(LongDNASeq(tile), read)
-        if score > best_score_p2
+        tile_res, tile_score = local_alignment_score(LongDNASeq(tile), nano_read)
+        if tile_score > best_score_p2
             best_score_p2 = tile_score
             best_tile_p2 = tile
             best_id_p2 = ids_p2[i]
-            best_alignment_p2 = split(string(res.aln.a), "\n")[2]
+            best_alignment_p2 = tile_res
+            start_p2 = tile_res.aln.a.aln.anchors[1].refpos
+            stop_p2 = tile_res.aln.a.aln.anchors[2].refpos
         end
     end
     push!(alignments_list_p2, best_alignment_p2)
     push!(id_list_p2, best_id_p2)
+    push!(alignments_start_p2, start_p2)
+    push!(alignments_stop_p2, stop_p2)
 
     # position 3
     best_score_p3 = 0
-    best_tile_p3 = ""
-    best_id_p3 = ""
+    best_tile_p3 = ""; best_id_p3 = ""
     best_alignment_p3 = "" # the alignment of the tile
+    start_p3 = -1; stop_p3 = -1
     for (i, tile) in enumerate(tiles_p3)
-        res, score = local_alignment_score(LongDNASeq(tile), read)
-        if score > best_score_p3
+        tile_res, tile_score = local_alignment_score(LongDNASeq(tile), nano_read)
+        if tile_score > best_score_p3
             best_score_p3 = tile_score
             best_tile_p3 = tile
             best_id_p3 = ids_p3[i]
-            best_alignment_p3 = split(string(res.aln.a), "\n")[2]
+            best_alignment_p3 = tile_res
+            start_p3 = tile_res.aln.a.aln.anchors[1].refpos
+            stop_p3 = tile_res.aln.a.aln.anchors[2].refpos
         end
     end
     push!(alignments_list_p3, best_alignment_p3)
     push!(id_list_p3, best_id_p3)
+    push!(alignments_start_p3, start_p3)
+    push!(alignments_stop_p3, stop_p3)
 
     # position 4
     best_score_p4 = 0
-    best_tile_p4 = ""
-    best_id_p4 = ""
+    best_tile_p4 = ""; best_id_p4 = ""
     best_alignment_p4 = "" # the alignment of the tile
+    start_p4 = -1; stop_p4 = -1
     for (i, tile) in enumerate(tiles_p4)
-        res, score = local_alignment_score(LongDNASeq(tile), read)
-        if score > best_score_p4
+        tile_res, tile_score = local_alignment_score(LongDNASeq(tile), nano_read)
+        if tile_score > best_score_p4
             best_score_p4 = tile_score
             best_tile_p4 = tile
             best_id_p4 = ids_p4[i]
-            best_alignment_p4 = split(string(res.aln.a), "\n")[2]
+            best_alignment_p4 = tile_res
+            start_p4 = tile_res.aln.a.aln.anchors[1].refpos
+            stop_p4 = tile_res.aln.a.aln.anchors[2].refpos
         end
     end
     push!(alignments_list_p4, best_alignment_p4)
     push!(id_list_p4, best_id_p4)
+    push!(alignments_start_p4, start_p4)
+    push!(alignments_stop_p4, stop_p4)
 
-    # Build DataFrame
-    results = DataFrame(id1=id_list_p1, id2=id_list_p2, id3=id_list_p3,
-        id4=id_list_p4, aln1=alignments_list_p1, aln2=alignments_list_p2,
-        aln3=alignments_list_p3, aln4=alignments_list_p4)
+    # update bar
+    next!(bar)
 end
+
+# Build DataFrame
+results = DataFrame(
+    id1=id_list_p1, id2=id_list_p2, id3=id_list_p3, id4=id_list_p4,
+    aln1=alignments_list_p1, start1=alignments_start_p1, stop1=alignments_stop_p1,
+    aln2=alignments_list_p2, start2=alignments_start_p2, stop2=alignments_stop_p2,
+    aln3=alignments_list_p3, start3=alignments_start_p3, stop3=alignments_stop_p3,
+    aln4=alignments_list_p4, start4=alignments_start_p4, stop4=alignments_stop_p4)
 
 
 # 3 - TEST
